@@ -89,15 +89,23 @@ prerrequisito(aprendizaje_automatico, estadistica).
 % La coma (,) significa "y": todas las condiciones deben cumplirse.
 % forall(Condicion, Prueba) exige que Prueba se cumpla para cada
 % solucion de Condicion. Si no hay prerrequisitos, forall tiene exito.
-% \+ significa negacion por falla: no se puede demostrar que ya aprobo.
+% no_ha_aprobado/2 aplica negacion por falla: no se puede demostrar que ya
+% aprobo la materia con los hechos disponibles.
 puede_cursar(Estudiante, Materia) :-
     estudiante(Estudiante),
     materia(Materia),
-    \+ aprobo(Estudiante, Materia),
+    no_ha_aprobado(Estudiante, Materia),
     forall(
         prerrequisito(Materia, Requisito),
         aprobo(Estudiante, Requisito)
     ).
+
+% Negacion por falla: esto no demuestra que la persona nunca aprobo la
+% materia; solo que aprobo/2 no puede probarse a partir de esta base.
+no_ha_aprobado(Estudiante, Materia) :-
+    estudiante(Estudiante),
+    materia(Materia),
+    \+ aprobo(Estudiante, Materia).
 
 % Regla recursiva: prerrequisito_transitivo/2 encuentra tanto los
 % prerrequisitos directos como los que estan mas arriba en la cadena.
@@ -111,3 +119,51 @@ prerrequisito_transitivo(Materia, Requisito) :-
 prerrequisito_transitivo(Materia, Requisito) :-
     prerrequisito(Materia, RequisitoIntermedio),
     prerrequisito_transitivo(RequisitoIntermedio, Requisito).
+
+% Listas como terminos: findall/3 reune en una lista las soluciones
+% encontradas para cada estudiante registrado.
+materias_aprobadas(Estudiante, Materias) :-
+    estudiante(Estudiante),
+    findall(Materia, aprobo(Estudiante, Materia), Materias).
+
+materias_disponibles(Estudiante, Materias) :-
+    estudiante(Estudiante),
+    findall(Materia, puede_cursar(Estudiante, Materia), Materias).
+
+% Arbol de prerrequisitos como termino recursivo:
+% nodo(Materia, ListaDeNodosRequisito).
+% Las materias sin prerrequisitos son hojas y tienen una lista vacia.
+arbol_prerrequisitos(Materia, nodo(Materia, Requisitos)) :-
+    materia(Materia),
+    findall(
+        ArbolRequisito,
+        (
+            prerrequisito(Materia, Requisito),
+            arbol_prerrequisitos(Requisito, ArbolRequisito)
+        ),
+        Requisitos
+    ).
+
+% Clasifica una materia para identificadores concretos. Los cortes evitan
+% que Prolog pruebe las clasificaciones posteriores una vez determinado el
+% primer estado aplicable.
+estado_materia(Estudiante, Materia, Estado) :-
+    ground(Estudiante-Materia),
+    estado_materia_conocida(Estudiante, Materia, Estado).
+
+estado_materia_conocida(Estudiante, _, estudiante_no_registrado) :-
+    \+ estudiante(Estudiante),
+    !.
+estado_materia_conocida(Estudiante, Materia, materia_inexistente) :-
+    estudiante(Estudiante),
+    \+ materia(Materia),
+    !.
+estado_materia_conocida(Estudiante, Materia, aprobada) :-
+    aprobo(Estudiante, Materia),
+    !.
+estado_materia_conocida(Estudiante, Materia, disponible) :-
+    puede_cursar(Estudiante, Materia),
+    !.
+estado_materia_conocida(Estudiante, Materia, bloqueada) :-
+    estudiante(Estudiante),
+    materia(Materia).

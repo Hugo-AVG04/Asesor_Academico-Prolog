@@ -136,6 +136,66 @@ forall(Condicion, Prueba) verifica que Prueba se cumpla para cada valor que
 hace verdadera Condicion. En este caso, confirma que Ana aprobo programacion
 y matematicas, que son los dos prerrequisitos directos de ia.
 
+9. Negacion por falla: comprobar una materia no aprobada
+--------------------------------------------------------
+Consultas:
+?- no_ha_aprobado(luis, ia).
+true.
+
+?- no_ha_aprobado(ana, programacion).
+false.
+
+no_ha_aprobado/2 usa \+ para comprobar que aprobo/2 no puede demostrarse con
+los hechos actuales. Esto es negacion por falla: no significa que se haya
+demostrado que la materia nunca se aprobo fuera de la informacion registrada.
+puede_cursar/2 usa esta regla para excluir materias ya aprobadas.
+
+10. Obtener listas de materias
+------------------------------
+Consultas:
+?- materias_aprobadas(ana, Lista).
+Lista = [programacion, matematicas].
+
+?- materias_disponibles(ana, Lista).
+Lista = [estructuras_datos, bases_datos, ia, estadistica].
+
+Las listas son terminos de Prolog. findall/3 recoge en una lista las soluciones
+de un objetivo; el orden corresponde al orden de los hechos materia/1.
+Un estudiante sin aprobaciones produciria la lista vacia en
+materias_aprobadas/2.
+
+11. Representar la cadena como un arbol
+---------------------------------------
+Consulta:
+?- arbol_prerrequisitos(aprendizaje_automatico, Arbol).
+
+Resultado esperado:
+Arbol = nodo(aprendizaje_automatico,
+             [nodo(ia, [nodo(programacion, []), nodo(matematicas, [])]),
+              nodo(estadistica, [])]).
+
+Cada termino nodo(Materia, Hijos) representa una materia y una lista de nodos
+con sus prerrequisitos. Las hojas usan una lista vacia. El arbol se construye
+recursivamente desde los hechos prerrequisito/2.
+
+12. Clasificar una materia usando corte
+---------------------------------------
+Consultas:
+?- estado_materia(ana, programacion, Estado).
+Estado = aprobada.
+
+?- estado_materia(luis, ia, Estado).
+Estado = bloqueada.
+
+?- estado_materia(ana, materia_inexistente, Estado).
+Estado = materia_inexistente.
+
+estado_materia/3 espera que el estudiante y la materia sean identificadores
+concretos. El operador de corte (!) confirma el primer estado encontrado y
+evita que Prolog pruebe las clasificaciones posteriores. Los estados posibles
+son estudiante_no_registrado, materia_inexistente, aprobada, disponible y
+bloqueada.
+
 
 SIMBOLOS Y SINTAXIS DE PROLOG
 =============================
@@ -165,6 +225,18 @@ SIMBOLOS Y SINTAXIS DE PROLOG
 • Negacion \+: negacion por falla. \+ aprobo(A, M) significa que Prolog no
   puede demostrar que A aprobo M con los hechos disponibles; no es una prueba
   de que la materia nunca se haya aprobado en el mundo real.
+
+• Corte (!): evita que Prolog retroceda a alternativas posteriores dentro de
+  la regla. estado_materia/3 lo usa para dejar fija la primera clasificacion
+  aplicable.
+
+• Listas: terminos con elementos entre corchetes, como [programacion, ia].
+  [] es la lista vacia. materias_aprobadas/2 y materias_disponibles/2 usan
+  findall/3 para recolectar soluciones.
+
+• Arboles como terminos: una estructura nodo(Materia, Hijos) representa un
+  nodo y sus hijos; por ejemplo nodo(ia, [nodo(programacion, [])]). El segundo
+  argumento es una lista, por lo que las hojas tienen [] como hijos.
 
 • forall(Generador, Prueba): exige que la prueba sea cierta para todas las
   soluciones del generador. Si el generador no produce soluciones, tiene
