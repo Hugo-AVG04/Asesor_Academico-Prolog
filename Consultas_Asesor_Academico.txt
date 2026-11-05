@@ -1,0 +1,186 @@
+CONSULTAS DEL ASESOR ACADEMICO
+==============================
+
+Como cargar el programa
+-----------------------
+En SWI-Prolog, cambia el directorio actual a la carpeta del proyecto y carga
+el archivo con:
+
+?- [Asesor_Academico].
+
+El indicador ?- es el prompt de Prolog; no se escribe dentro del archivo.
+Cada consulta termina con punto. Prolog responde true/false o muestra valores
+para las variables. Pulsa ; para pedir otra respuesta y Enter para terminar.
+
+La base incluye 20 estudiantes: ana, luis, carlos, maria, jose, sofia, diego,
+valentina, mateo, camila, sebastian, isabella, daniel, gabriela, alejandro,
+paula, fernando, lucia, andres y victoria. En los hechos se escriben en
+minusculas porque Prolog representa los nombres como atomos.
+
+
+1. Comprobar si una persona esta registrada
+-------------------------------------------
+Consulta:
+?- estudiante(ana).
+
+Resultado esperado:
+true.
+
+estudiante/1 es un hecho con un argumento. El /1 indica la cantidad de
+argumentos del predicado. ana, escrito en minusculas, es un atomo (un dato
+constante), no una variable.
+
+
+2. Consultar las materias que puede cursar Ana
+----------------------------------------------
+Consulta:
+?- puede_cursar(ana, Materia).
+
+Resultados esperados (el orden puede variar):
+Materia = estructuras_datos ;
+Materia = bases_datos ;
+Materia = ia ;
+Materia = estadistica.
+
+Materia comienza con mayuscula, por eso es una variable. Prolog busca todas
+las materias que hacen verdadera la regla puede_cursar/2. Ana ya aprobo
+programacion y matematicas, pero no se listan materias que ya aprobo.
+No puede cursar aprendizaje_automatico porque aun no aprobo ia ni estadistica.
+
+
+3. Consultar las materias que puede cursar Luis
+-----------------------------------------------
+Consulta:
+?- puede_cursar(luis, Materia).
+
+Resultados esperados (el orden puede variar):
+Materia = matematicas ;
+Materia = estructuras_datos ;
+Materia = bases_datos ;
+Materia = estadistica.
+
+Luis aprobo programacion, asi que cumple el requisito de estructuras_datos
+y bases_datos. No puede cursar ia porque aun no aprobo matematicas.
+Las materias sin prerrequisitos, como matematicas y estadistica, tambien
+se consideran elegibles.
+
+
+4. Consultar que estudiantes pueden cursar IA
+---------------------------------------------
+Consulta:
+?- puede_cursar(Estudiante, ia).
+
+Resultados esperados:
+Estudiante = ana ;
+Estudiante = carlos ;
+Estudiante = sofia ;
+Estudiante = mateo ;
+Estudiante = isabella ;
+Estudiante = alejandro ;
+Estudiante = lucia.
+
+Estudiante es una variable. La regla encuentra a quienes aprobaron
+programacion y matematicas, los dos prerrequisitos directos de IA, y excluye
+a quienes ya aprobaron IA. Los otros estudiantes no cumplen ambos requisitos.
+
+
+5. Consultar que materias puede cursar cualquier estudiante
+-----------------------------------------------------------
+Consulta:
+?- puede_cursar(Estudiante, Materia).
+
+Esta consulta devuelve pares de valores (Estudiante, Materia). Pulsa ; para
+ver la siguiente respuesta. Como hay 20 estudiantes, hay varias soluciones;
+no se enumeran todas aqui.
+
+
+6. Examinar los prerrequisitos de una materia, incluidos los indirectos
+-----------------------------------------------------------------------
+Consulta:
+?- prerrequisito_transitivo(aprendizaje_automatico, Requisito).
+
+Resultados esperados (el orden puede variar):
+Requisito = ia ;
+Requisito = estadistica ;
+Requisito = programacion ;
+Requisito = matematicas.
+
+ia y estadistica son requisitos directos de aprendizaje_automatico. A su vez,
+programacion y matematicas son requisitos de ia, por lo que la regla recursiva
+tambien los encuentra. Esta consulta ilustra la estructura recursiva:
+un caso base reconoce un requisito directo y un paso recursivo recorre la
+cadena hacia atras.
+
+
+7. Comprobar si un prerrequisito esta en la cadena
+-------------------------------------------------
+Consulta:
+?- prerrequisito_transitivo(aprendizaje_automatico, programacion).
+
+Resultado esperado:
+true.
+
+Aunque programacion no es requisito directo de aprendizaje_automatico, aparece
+en su cadena porque es prerrequisito de ia, que si es requisito directo.
+
+
+8. Verificar los requisitos directos de Ana para IA
+---------------------------------------------------
+Consulta:
+?- forall(prerrequisito(ia, Requisito), aprobo(ana, Requisito)).
+
+Resultado esperado:
+true.
+
+forall(Condicion, Prueba) verifica que Prueba se cumpla para cada valor que
+hace verdadera Condicion. En este caso, confirma que Ana aprobo programacion
+y matematicas, que son los dos prerrequisitos directos de ia.
+
+
+SIMBOLOS Y SINTAXIS DE PROLOG
+=============================
+
+• Hecho: una afirmacion terminada en punto, por ejemplo estudiante(ana).
+  Los hechos son la informacion inicial de la base de conocimiento.
+
+• Regla: tiene la forma Cabeza :- Cuerpo. Se lee "Cabeza es cierta si Cuerpo
+  es cierto". :- separa lo que se define de las condiciones que lo justifican.
+
+• Predicado y argumentos: puede_cursar/2 significa el predicado puede_cursar
+  con dos argumentos. El numero despues de / es su aridad.
+
+• Atomos: nombres que empiezan con minuscula, como ana o programacion.
+  Representan datos constantes.
+
+• Variables: nombres que empiezan con mayuscula o guion bajo, como Materia,
+  Estudiante o _. Prolog busca valores que satisfacen la consulta. Una variable
+  que empieza con _ se usa tipicamente cuando no interesa su valor.
+
+• Coma (,): conjuncion, se lee "y"; todas las condiciones deben cumplirse.
+
+• Punto y coma (;): en el prompt solicita la siguiente respuesta. En una
+  regla tambien puede representar alternativas ("o"), aunque aqui se usa
+  para recorrer las soluciones mostradas por Prolog.
+
+• Negacion \+: negacion por falla. \+ aprobo(A, M) significa que Prolog no
+  puede demostrar que A aprobo M con los hechos disponibles; no es una prueba
+  de que la materia nunca se haya aprobado en el mundo real.
+
+• forall(Generador, Prueba): exige que la prueba sea cierta para todas las
+  soluciones del generador. Si el generador no produce soluciones, tiene
+  exito; por eso una materia sin prerrequisitos puede cursarse.
+
+• Recursion: una regla se llama a si misma. Para que termine, necesita un
+  caso base; prerrequisito_transitivo/2 tiene un caso directo y un paso que
+  sigue la cadena de prerrequisitos.
+
+• Punto final (.): termina cada hecho, regla y consulta.
+
+• Variables de las consultas: son variables logicas; Prolog busca
+  sustituciones para hacer verdadera la consulta. Con ; se solicitan mas
+  soluciones.
+
+Los identificadores de materias son atomos y usan guion bajo (_) para separar
+palabras, por ejemplo aprendizaje_automatico. Las relaciones se expresan con
+hechos: prerrequisito(Materia, Requisito) significa que Requisito debe
+aprobarse antes de cursar Materia.
